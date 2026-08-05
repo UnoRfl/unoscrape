@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Stationer's Report — Amazon Best Sellers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#111214; --ink2:#171819; --ink3:#1f2124; --ink4:#2b2e33;
+  --paper:#f2ecdd; --paper2:#f8f3e6;
+  --red:#c73e3a; --red2:#a12e2b;
+  --walnut:#8a7358; --gold:#d4b463; --sage:#7d9471;
+  --text:#e8e2d3; --muted:#82786a; --dim:#5d564c;
+  --line:rgba(232,226,211,.08); --line2:rgba(232,226,211,.14);
+  --sidebar:296px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font:400 15px/1.6 'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+a{color:inherit}
+::selection{background:var(--gold);color:var(--ink)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mono{font-family:'JetBrains Mono',monospace}
+.eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+
+/* ── Shell ── */
+.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
+
+/* ── Sidebar ── */
+.side{border-right:1px solid var(--line);background:var(--ink2);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.brand{padding:22px 22px 18px;border-bottom:1px solid var(--line)}
+.brand h1{font:400 25px/1.05 'Instrument Serif',serif;letter-spacing:-.01em}
+.brand h1 em{font-style:italic;color:var(--gold)}
+.brand .sub{margin-top:6px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+.side-scroll{flex:1;overflow-y:auto;padding:18px 22px 24px}
+.side-scroll::-webkit-scrollbar{width:8px}
+.side-scroll::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:4px}
+
+.blk{margin-bottom:26px}
+.blk-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.mini-btn{background:none;border:none;color:var(--walnut);font-size:11px;letter-spacing:.04em;text-decoration:underline;text-underline-offset:2px;padding:0}
+.mini-btn:hover{color:var(--gold)}
+
+.grp{margin-bottom:14px}
+.grp-name{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.chk{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:13.5px;color:var(--text);cursor:pointer;user-select:none}
+.chk:hover .box{border-color:var(--walnut)}
+.chk .box{width:15px;height:15px;flex:0 0 15px;border:1px solid var(--line2);border-radius:2px;display:grid;place-items:center;transition:.12s}
+.chk input{position:absolute;opacity:0;pointer-events:none}
+.chk input:checked+.box{background:var(--gold);border-color:var(--gold)}
+.chk input:checked+.box::after{content:'';width:8px;height:4px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg) translate(1px,-1px)}
+.chk .n{margin-left:auto;font:500 10px 'JetBrains Mono',monospace;color:var(--dim)}
+.chk.bad .lbl{color:var(--dim);text-decoration:line-through}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.inp,.sel{width:100%;background:var(--ink);border:1px solid var(--line2);color:var(--text);padding:9px 11px;border-radius:2px;font-size:13px;outline:none;transition:.12s}
+.inp:focus,.sel:focus{border-color:var(--walnut)}
+.inp::placeholder{color:var(--dim)}
+.sel{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.toggle{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;cursor:pointer;user-select:none}
+.toggle input{position:absolute;opacity:0}
+.toggle .sw{width:30px;height:17px;flex:0 0 30px;background:var(--ink4);border-radius:9px;position:relative;transition:.15s}
+.toggle .sw::after{content:'';position:absolute;top:2.5px;left:2.5px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:.15s}
+.toggle input:checked+.sw{background:var(--sage)}
+.toggle input:checked+.sw::after{transform:translateX(13px);background:var(--paper2)}
+
+.refresh{margin-top:6px;padding:14px;background:var(--ink3);border-radius:3px;font-size:12px;line-height:1.65;color:var(--muted)}
+.refresh strong{color:var(--text);font-weight:500;display:block;margin-bottom:5px;font-size:12.5px}
+.refresh a{color:var(--gold);text-decoration:underline;text-underline-offset:2px}
+
+/* ── Main ── */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{border-bottom:1px solid var(--line);padding:18px 34px;display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap;position:sticky;top:0;background:rgba(17,18,20,.93);backdrop-filter:blur(12px);z-index:20}
+.stats{display:flex;gap:30px;flex-wrap:wrap}
+.stat .k{font:400 25px/1 'Instrument Serif',serif;color:var(--paper2)}
+.stat .k.gold{color:var(--gold)}
+.stat .v{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:5px}
+.top-right{display:flex;gap:9px;align-items:center}
+
+.views{display:flex;border:1px solid var(--line2);border-radius:2px;overflow:hidden}
+.views button{background:none;border:none;color:var(--muted);padding:8px 13px;font-size:12px;font-weight:500;transition:.12s}
+.views button+button{border-left:1px solid var(--line2)}
+.views button:hover:not(.on){color:var(--text)}
+.views button.on{background:var(--paper);color:var(--ink)}
+
+.btn{background:none;border:1px solid var(--line2);color:var(--text);padding:8px 15px;border-radius:2px;font-size:12px;font-weight:500;transition:.12s}
+.btn:hover{border-color:var(--walnut)}
+.btn.red{background:var(--red);border-color:var(--red);color:var(--paper2)}
+.btn.red:hover{background:var(--red2);border-color:var(--red2)}
+
+.body{padding:30px 34px 90px;flex:1}
+.hdr{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:20px;padding-bottom:11px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.hdr h2{font:400 21px 'Instrument Serif',serif;color:var(--paper2)}
+.hdr .meta{font:400 11px 'JetBrains Mono',monospace;color:var(--dim)}
+
+/* ── Editorial rows ── */
+.rows{display:flex;flex-direction:column}
+.r{display:grid;grid-template-columns:104px 88px 1fr auto;gap:24px;padding:22px 0;border-bottom:1px solid var(--line);align-items:center}
+.r:last-child{border-bottom:none}
+.r-rank{text-align:right;position:relative}
+.r-rank .n{font:italic 400 92px/.82 'Instrument Serif',serif;color:var(--walnut);letter-spacing:-.03em;display:block}
+.r.p1 .r-rank .n{color:var(--red)}
+.r.p3 .r-rank .n{color:var(--gold)}
+.r-rank .mv{font:700 10.5px 'JetBrains Mono',monospace;margin-top:5px;display:block}
+.up{color:var(--sage)} .down{color:var(--red)} .same{color:var(--dim)} .fresh{color:var(--gold)}
+
+.thumb{width:88px;height:88px;background:var(--paper);border-radius:2px;overflow:hidden;display:grid;place-items:center;box-shadow:0 3px 14px rgba(0,0,0,.34)}
+.thumb img{max-width:100%;max-height:100%;object-fit:contain}
+
+.r-body{min-width:0}
+.r-body .t{font:400 18px/1.32 'Instrument Serif',serif;color:var(--text);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.r-body .t a{text-decoration:none}
+.r-body .t a:hover{color:var(--gold)}
+.line{display:flex;gap:15px;align-items:center;flex-wrap:wrap;font:400 11.5px 'JetBrains Mono',monospace;color:var(--muted)}
+.bd{font:500 10px 'Inter',sans-serif;letter-spacing:.03em;padding:3px 7px;border-radius:2px;background:var(--ink4);color:var(--muted)}
+.bd.choice{background:rgba(212,180,99,.16);color:var(--gold)}
+.bd.deal{background:rgba(199,62,58,.16);color:var(--red)}
+.bd.sb{background:rgba(125,148,113,.16);color:var(--sage)}
+.brandtag{font:500 11.5px 'Inter',sans-serif;color:var(--walnut)}
+.rt{color:var(--gold)} .pr{color:var(--paper);font-weight:500}
+.r-side{text-align:right;min-width:88px}
+.r-side .cat{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.r-side a{font-size:11px;color:var(--text);text-decoration:none;border-bottom:1px solid var(--walnut);padding-bottom:1px}
+.r-side a:hover{color:var(--gold);border-color:var(--gold)}
+
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:18px}
+.c{background:var(--ink2);border:1px solid var(--line);border-radius:3px;padding:15px;display:flex;flex-direction:column;gap:10px;transition:.15s;position:relative}
+.c:hover{border-color:var(--walnut);transform:translateY(-2px)}
+.c-top{display:flex;justify-content:space-between;align-items:flex-start}
+.c-rank{font:italic 400 38px/.8 'Instrument Serif',serif;color:var(--walnut)}
+.c.p1 .c-rank{color:var(--red)} .c.p3 .c-rank{color:var(--gold)}
+.c .ph{aspect-ratio:1;background:var(--paper);border-radius:2px;display:grid;place-items:center;overflow:hidden}
+.c .ph img{max-width:100%;max-height:100%;object-fit:contain}
+.c .t{font:400 14.5px/1.34 'Instrument Serif',serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.c .t a{text-decoration:none}
+.c .t a:hover{color:var(--gold)}
+.c .f{margin-top:auto;display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:var(--muted);padding-top:4px;border-top:1px solid var(--line)}
+
+/* ── Table ── */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--ink3)}
+th{text-align:left;padding:11px 13px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;position:sticky;top:0;background:var(--ink3)}
+th.r,td.r{text-align:right}
+td{padding:10px 13px;border-top:1px solid var(--line);vertical-align:middle}
+tbody tr:hover{background:var(--ink2)}
+td.num{font-family:'JetBrains Mono',monospace;font-size:12px}
+td .tt{display:block;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td .tt a{text-decoration:none}
+td .tt a:hover{color:var(--gold)}
+td img{width:34px;height:34px;object-fit:contain;background:var(--paper);border-radius:2px;display:block}
+
+/* ── Brands ── */
+.brands{margin-top:52px;padding-top:28px;border-top:1px solid var(--line2)}
+.brands h3{font:400 19px 'Instrument Serif',serif;margin-bottom:16px;color:var(--paper2)}
+.bl{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:10px 30px}
+.br{display:grid;grid-template-columns:1fr 76px 30px;gap:11px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
+.br .bn{font:400 16px 'Instrument Serif',serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:4px;background:var(--ink4);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+.br .bc{font:500 11px 'JetBrains Mono',monospace;color:var(--muted);text-align:right}
+
+/* ── States ── */
+.state{text-align:center;padding:88px 20px}
+.state .m{font:italic 400 108px/1 'Instrument Serif',serif;color:var(--ink4);margin-bottom:14px}
+.state h2{font:400 24px 'Instrument Serif',serif;margin-bottom:8px}
+.state p{color:var(--muted);font-size:14px;max-width:430px;margin:0 auto}
+.warn{border-left:3px solid var(--red);background:rgba(199,62,58,.07);padding:15px 19px;border-radius:2px;margin-bottom:24px}
+.warn h4{font:400 17px 'Instrument Serif',serif;color:var(--red);margin-bottom:4px}
+.warn p{font-size:13px;color:var(--text)}
+.warn .n{font:400 11px 'JetBrains Mono',monospace;color:var(--dim);margin-top:7px}
+.pill{display:inline-block;font:500 10px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:2px;background:rgba(199,62,58,.16);color:var(--red);margin-left:9px;vertical-align:middle}
+
+/* ── Mobile ── */
+.hamb{display:none;background:none;border:1px solid var(--line2);color:var(--text);padding:8px 13px;border-radius:2px;font-size:12px}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:40}
+@media(max-width:1120px){.r{grid-template-columns:88px 76px 1fr}.r-side{display:none}}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;width:min(88vw,var(--sidebar));z-index:50;transform:translateX(-102%);transition:transform .22s ease}
+  .side.open{transform:none;box-shadow:0 0 44px rgba(0,0,0,.6)}
+  .scrim.on{display:block}
+  .hamb{display:inline-block}
+  .top,.body{padding-left:20px;padding-right:20px}
+  .stats{gap:20px}
+}
+@media(max-width:600px){
+  .r{grid-template-columns:56px 60px 1fr;gap:13px;padding:16px 0}
+  .r-rank .n{font-size:52px}
+  .thumb{width:60px;height:60px}
+  .r-body .t{font-size:15px}
+  .state .m{font-size:74px}
+  .stat .k{font-size:20px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="shell">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <h1>The <em>Stationer's</em> Report</h1>
+      <div class="sub">Amazon UK · best sellers</div>
+    </div>
+
+    <div class="side-scroll">
+
+      <div class="blk">
+        <div class="blk-head">
+          <span class="eyebrow">Categories</span>
+          <div style="display:flex;gap:11px">
+            <button class="mini-btn" id="sel-all">All</button>
+            <button class="mini-btn" id="sel-none">None</button>
+          </div>
+        </div>
+        <div id="cats"></div>
+      </div>
+
+      <div class="blk">
+        <div class="blk-head"><span class="eyebrow">Search &amp; sort</span></div>
+        <div class="field">
+          <label for="q">Find in titles or brands</label>
+          <input class="inp" type="search" id="q" placeholder="e.g. cat, funny, Hallmark">
+        </div>
+        <div class="field">
+          <label for="sort">Order by</label>
+          <select class="sel" id="sort">
+            <option value="rank">Best-seller rank</option>
+            <option value="movers">Biggest movers</option>
+            <option value="rating">Highest rated</option>
+            <option value="reviews">Most reviewed</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="blk">
+        <div class="blk-head">
+          <span class="eyebrow">Filters</span>
+          <button class="mini-btn" id="clear-f">Reset</button>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="minr">Min rating</label>
+            <select class="sel" id="minr">
+              <option value="0">Any</option>
+              <option value="3">3.0+</option>
+              <option value="4">4.0+</option>
+              <option value="4.5">4.5+</option>
+              <option value="4.7">4.7+</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="minv">Min reviews</label>
+            <select class="sel" id="minv">
+              <option value="0">Any</option>
+              <option value="100">100+</option>
+              <option value="500">500+</option>
+              <option value="1000">1,000+</option>
+              <option value="5000">5,000+</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="topn">Show per category</label>
+          <select class="sel" id="topn">
+            <option value="10">Top 10</option>
+            <option value="20">Top 20</option>
+            <option value="30" selected>All (30)</option>
+          </select>
+        </div>
+        <label class="toggle"><input type="checkbox" id="f-move"><span class="sw"></span><span>Movers &amp; new entries only</span></label>
+        <label class="toggle"><input type="checkbox" id="f-badge"><span class="sw"></span><span>Badged products only</span></label>
+      </div>
+
+      <div class="blk">
+        <div class="blk-head"><span class="eyebrow">Data</span></div>
+        <div class="field">
+          <label for="snap">Snapshot</label>
+          <select class="sel" id="snap"><option value="">Latest</option></select>
+        </div>
+        <div class="refresh">
+          <strong>Refreshing the data</strong>
+          Numbers reload automatically every six hours. To pull fresh figures right now, open
+          <a href="#" id="gh-link" target="_blank" rel="noopener">the scraper</a>
+          and press “Run workflow”. Results land here about a minute later.
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ─── Main ─── -->
+  <div class="main">
+    <div class="top">
+      <div class="stats" id="stats"></div>
+      <div class="top-right">
+        <button class="hamb" id="hamb">Filters</button>
+        <div class="views">
+          <button data-v="list" class="on">List</button>
+          <button data-v="grid">Grid</button>
+          <button data-v="table">Table</button>
+        </div>
+        <button class="btn" id="csv">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="body" id="body">
+      <div class="state"><div class="m">…</div><h2>Loading the latest figures</h2><p>One moment.</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = n => n == null ? '—' : n.toLocaleString('en-GB');
+
+const S = { data:null, sel:new Set(), view:'list', snapshots:[] };
+
+/* ── Load ── */
+init();
+
+async function init(){
+  // Derive the repo's Actions URL from the Pages hostname, so the link works
+  // wherever this is hosted without hard-coding a username.
+  const host = location.hostname.split('.')[0];
+  const repo = location.pathname.split('/').filter(Boolean)[0] || '';
+  $('#gh-link').href = repo ? `https://github.com/${host}/${repo}/actions` : 'https://github.com';
+
+  try{
+    const r = await fetch('data/latest.json?t=' + Date.now());
+    if(!r.ok) throw new Error('data/latest.json is missing. The first scrape may not have finished.');
+    S.data = await r.json();
+  }catch(e){ return fail(e.message); }
+
+  const cats = S.data.categories || {};
+  if(!Object.keys(cats).length) return fail('No categories in the data file.');
+
+  buildCats();
+  // Default selection: the first group's categories
+  const firstGroup = cats[Object.keys(cats)[0]]?.group;
+  Object.entries(cats).forEach(([k,c]) => { if(c.group === firstGroup) S.sel.add(k); });
+  if(!S.sel.size) S.sel.add(Object.keys(cats)[0]);
+  syncBoxes();
+  wire();
+  render();
+}
+
+function fail(msg){
+  $('#body').innerHTML = `<div class="warn"><h4>No report available</h4><p>${esc(msg)}</p>
+    <div class="n">Once the scheduled scrape completes, figures appear here automatically.</div></div>`;
+}
+
+/* ── Sidebar categories ── */
+function buildCats(){
+  const cats = S.data.categories;
+  const groups = {};
+  Object.entries(cats).forEach(([slug,c]) => {
+    (groups[c.group || 'Other'] ||= []).push([slug,c]);
+  });
+  $('#cats').innerHTML = Object.entries(groups).map(([g,items]) => `
+    <div class="grp">
+      <div class="grp-name">${esc(g)}</div>
+      ${items.map(([slug,c]) => {
+        const n = (c.products||[]).length;
+        const bad = !c.ok && !n;
+        return `<label class="chk${bad?' bad':''}">
+          <input type="checkbox" value="${esc(slug)}"${bad?' disabled':''}>
+          <span class="box"></span>
+          <span class="lbl">${esc(c.label||slug)}</span>
+          <span class="n">${bad?'—':n}</span>
+        </label>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function syncBoxes(){
+  $$('#cats input').forEach(i => i.checked = S.sel.has(i.value));
+}
+
+/* ── Wiring ── */
+function wire(){
+  $('#cats').addEventListener('change', e => {
+    if(e.target.tagName !== 'INPUT') return;
+    e.target.checked ? S.sel.add(e.target.value) : S.sel.delete(e.target.value);
+    render();
+  });
+  $('#sel-all').onclick = () => {
+    $$('#cats input:not([disabled])').forEach(i => S.sel.add(i.value));
+    syncBoxes(); render();
+  };
+  $('#sel-none').onclick = () => { S.sel.clear(); syncBoxes(); render(); };
+
+  ['#q','#sort','#minr','#minv','#topn','#f-move','#f-badge'].forEach(sel => {
+    const el = $(sel);
+    el.addEventListener(sel === '#q' ? 'input' : 'change', render);
+  });
+
+  $('#clear-f').onclick = () => {
+    $('#q').value = ''; $('#minr').value = '0'; $('#minv').value = '0';
+    $('#topn').value = '30'; $('#f-move').checked = false; $('#f-badge').checked = false;
+    render();
+  };
+
+  $$('.views button').forEach(b => b.onclick = () => {
+    S.view = b.dataset.v;
+    $$('.views button').forEach(x => x.classList.toggle('on', x === b));
+    render();
+  });
+
+  $('#csv').onclick = exportCsv;
+
+  const side = $('#side'), scrim = $('#scrim');
+  const close = () => { side.classList.remove('open'); scrim.classList.remove('on'); };
+  $('#hamb').onclick = () => { side.classList.add('open'); scrim.classList.add('on'); };
+  scrim.onclick = close;
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') close();
+    if(e.key === '/' && document.activeElement !== $('#q')){ e.preventDefault(); $('#q').focus(); }
+  });
+
+  loadSnapshots();
+}
+
+/* ── Snapshots ── */
+async function loadSnapshots(){
+  // The history folder has no index, so we probe the last 14 days at 6-hour marks.
+  const now = new Date(), tries = [];
+  for(let d = 0; d < 14; d++){
+    for(const h of [18,12,6,0]){
+      const t = new Date(now.getTime() - d*864e5);
+      t.setUTCHours(h,0,0,0);
+      if(t > now) continue;
+      tries.push(`${t.toISOString().slice(0,10)}T${String(h).padStart(2,'0')}`);
+    }
+  }
+  const found = [];
+  await Promise.all(tries.slice(0,32).map(async k => {
+    try{
+      const r = await fetch(`data/history/${k}.json`, {method:'HEAD'});
+      if(r.ok) found.push(k);
+    }catch{}
+  }));
+  if(!found.length) return;
+  S.snapshots = found.sort().reverse();
+  $('#snap').innerHTML = '<option value="">Latest</option>' +
+    S.snapshots.map(k => `<option value="${k}">${k.replace('T',' ')}:00 UTC</option>`).join('');
+  $('#snap').onchange = async e => {
+    const k = e.target.value;
+    try{
+      const r = await fetch(k ? `data/history/${k}.json` : `data/latest.json?t=${Date.now()}`);
+      S.data = await r.json();
+      buildCats(); syncBoxes(); render();
+    }catch{ fail('That snapshot could not be loaded.'); }
+  };
+}
+
+/* ── Selection & filtering ── */
+function rows(){
+  const cats = S.data.categories, out = [];
+  const q = $('#q').value.trim().toLowerCase();
+  const minR = parseFloat($('#minr').value) || 0;
+  const minV = parseInt($('#minv').value) || 0;
+  const topN = parseInt($('#topn').value) || 30;
+  const onlyMove = $('#f-move').checked;
+  const onlyBadge = $('#f-badge').checked;
+
+  for(const slug of S.sel){
+    const c = cats[slug]; if(!c) continue;
+    (c.products || []).slice(0, topN).forEach(p => {
+      if(minR && (p.rating ?? 0) < minR) return;
+      if(minV && (p.reviews ?? 0) < minV) return;
+      if(onlyBadge && !(p.badges||[]).length) return;
+      if(onlyMove && !(p.is_new || (p.delta && p.delta !== 0))) return;
+      if(q){
+        const hay = `${p.title||''} ${p.brand||''}`.toLowerCase();
+        if(!hay.includes(q)) return;
+      }
+      out.push({...p, _cat:c.label || slug, _slug:slug});
+    });
+  }
+
+  const s = $('#sort').value;
+  const cmp = {
+    rank:      (a,b) => a.rank - b.rank,
+    movers:    (a,b) => (Math.abs(b.delta||0) + (b.is_new?99:0)) - (Math.abs(a.delta||0) + (a.is_new?99:0)),
+    rating:    (a,b) => (b.rating??0) - (a.rating??0),
+    reviews:   (a,b) => (b.reviews??0) - (a.reviews??0),
+    'price-asc':  (a,b) => (a.price_value??1e9) - (b.price_value??1e9),
+    'price-desc': (a,b) => (b.price_value??-1) - (a.price_value??-1),
+    title:     (a,b) => (a.title||'').localeCompare(b.title||''),
+  }[s] || ((a,b) => a.rank - b.rank);
+  return out.sort(cmp);
+}
+
+/* ── Render ── */
+function render(){
+  const list = rows();
+  renderStats(list);
+
+  if(!S.sel.size){
+    return void ($('#body').innerHTML = `<div class="state"><div class="m">№</div>
+      <h2>Nothing selected</h2><p>Tick a category in the sidebar to see its best sellers.</p></div>`);
+  }
+  if(!list.length){
+    return void ($('#body').innerHTML = `<div class="state"><div class="m">∅</div>
+      <h2>No products match</h2><p>Loosen the filters or clear the search to bring results back.</p></div>`);
+  }
+
+  const stale = [...S.sel].map(s => S.data.categories[s]).filter(c => c && (c.stale || !c.ok));
+  const warn = stale.length ? `<div class="warn"><h4>Some figures are from an earlier run</h4>
+    <p>${esc(stale.map(c=>c.label).join(', '))} could not be refreshed on the last attempt, so the previous results are shown.</p>
+    <div class="n">${esc(stale[0].error || 'reason unavailable')}</div></div>` : '';
+
+  const gen = S.data.generated_at ? new Date(S.data.generated_at) : null;
+  const head = `<div class="hdr">
+    <h2>${esc([...S.sel].map(s => S.data.categories[s]?.label || s).slice(0,3).join(' · '))}${S.sel.size>3?` <span class="pill">+${S.sel.size-3} more</span>`:''}</h2>
+    <div class="meta">${list.length} shown${gen?` · updated ${fmt(gen)}`:''}</div>
+  </div>`;
+
+  const view = S.view === 'grid' ? gridView(list) : S.view === 'table' ? tableView(list) : listView(list);
+  $('#body').innerHTML = warn + head + view + brandsView(list);
+}
+
+function renderStats(list){
+  const ratings = list.filter(p => p.rating).map(p => p.rating);
+  const movers = list.filter(p => p.delta && p.delta !== 0).length;
+  const fresh = list.filter(p => p.is_new).length;
+  const brands = new Set(list.map(p => p.brand).filter(b => b && b.length > 1));
+  const boxes = [
+    ['Products', list.length, false],
+    ['Categories', S.sel.size, false],
+    ['Distinct brands', brands.size, false],
+    ['Avg rating', ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(2) : '—', true],
+    ['Moved', movers, false],
+    ['New entries', fresh, true],
+  ];
+  $('#stats').innerHTML = boxes.map(([v,k,g]) =>
+    `<div class="stat"><div class="k${g?' gold':''}">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+}
+
+function mv(p){
+  if(p.is_new) return `<span class="mv fresh">NEW</span>`;
+  if(p.delta == null) return '';
+  if(p.delta === 0) return `<span class="mv same">—</span>`;
+  const up = p.delta > 0;
+  return `<span class="mv ${up?'up':'down'}">${up?'▲':'▼'}${Math.abs(p.delta)}</span>`;
+}
+
+function badges(p){
+  return (p.badges||[]).map(b => {
+    const cls = b === "Amazon's Choice" ? 'choice' : b === 'Deal' ? 'deal' : b === 'Small Business' ? 'sb' : '';
+    return `<span class="bd ${cls}">${esc(b)}</span>`;
+  }).join('');
+}
+
+function listView(list){
+  return `<div class="rows">` + list.map(p => `
+    <article class="r ${p.rank===1?'p1':p.rank<=3?'p3':''}">
+      <div class="r-rank"><span class="n">${String(p.rank).padStart(2,'0')}</span>${mv(p)}</div>
+      <div class="thumb">${p.image?`<img src="${esc(p.image)}" alt="" loading="lazy">`:''}</div>
+      <div class="r-body">
+        <div class="t"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title||'Untitled')}</a></div>
+        <div class="line">
+          ${p.brand?`<span class="brandtag">${esc(p.brand)}</span>`:''}
+          ${p.rating?`<span class="rt">${p.rating.toFixed(1)} ★</span>`:''}
+          ${p.reviews?`<span>${nf(p.reviews)} reviews</span>`:''}
+          ${p.price?`<span class="pr">${esc(p.price)}</span>`:''}
+          ${badges(p)}
+        </div>
+      </div>
+      <div class="r-side">
+        <div class="cat">${esc(p._cat)}</div>
+        <a href="${esc(p.url)}" target="_blank" rel="noopener">View ↗</a>
+      </div>
+    </article>`).join('') + `</div>`;
+}
+
+function gridView(list){
+  return `<div class="grid">` + list.map(p => `
+    <div class="c ${p.rank===1?'p1':p.rank<=3?'p3':''}">
+      <div class="c-top"><span class="c-rank">${String(p.rank).padStart(2,'0')}</span>${mv(p)}</div>
+      <div class="ph">${p.image?`<img src="${esc(p.image)}" alt="" loading="lazy">`:''}</div>
+      <div class="t"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title||'Untitled')}</a></div>
+      <div class="f">
+        <span>${p.rating?p.rating.toFixed(1)+' ★':'—'}</span>
+        <span>${p.reviews?nf(p.reviews):'—'}</span>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function tableView(list){
+  return `<div class="tw"><table>
+    <thead><tr>
+      <th class="r">#</th><th></th><th>Product</th><th>Brand</th>
+      <th class="r">Rating</th><th class="r">Reviews</th><th class="r">Price</th>
+      <th class="r">Move</th><th>Category</th>
+    </tr></thead><tbody>` + list.map(p => `
+      <tr>
+        <td class="r num">${p.rank}</td>
+        <td>${p.image?`<img src="${esc(p.image)}" alt="" loading="lazy">`:''}</td>
+        <td><span class="tt"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title||'Untitled')}</a></span></td>
+        <td>${esc(p.brand||'—')}</td>
+        <td class="r num">${p.rating?p.rating.toFixed(1):'—'}</td>
+        <td class="r num">${nf(p.reviews)}</td>
+        <td class="r num">${esc(p.price||'—')}</td>
+        <td class="r">${mv(p)||'—'}</td>
+        <td style="color:var(--muted);font-size:12px">${esc(p._cat)}</td>
+      </tr>`).join('') + `</tbody></table></div>`;
+}
+
+function brandsView(list){
+  const counts = {};
+  list.forEach(p => { const b = (p.brand||'').trim(); if(b.length>1) counts[b] = (counts[b]||0)+1; });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,24);
+  if(top.length < 2) return '';
+  const max = top[0][1];
+  return `<div class="brands"><h3>Who holds the shelf</h3><div class="bl">` +
+    top.map(([b,c]) => `<div class="br">
+      <span class="bn">${esc(b)}</span>
+      <span class="bar"><i style="width:${(c/max*100).toFixed(0)}%"></i></span>
+      <span class="bc">${c}</span>
+    </div>`).join('') + `</div></div>`;
+}
+
+/* ── Export ── */
+function exportCsv(){
+  const list = rows();
+  if(!list.length) return;
+  const cols = ['rank','prev_rank','delta','title','brand','rating','reviews','price','asin','url','_cat'];
+  const head = ['Rank','Previous rank','Change','Title','Brand','Rating','Reviews','Price','ASIN','URL','Category'];
+  const q = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const csv = [head.join(','), ...list.map(p => cols.map(c => q(p[c])).join(','))].join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'}));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `amazon-best-sellers-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function fmt(d){
+  return d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+</script>
+</body>
+</html>
