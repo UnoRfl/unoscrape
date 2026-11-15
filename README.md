@@ -1,4 +1,6 @@
-# The Stationer's Report
+<p align="center"><img src=".github/assets/banner.png" alt="unoscrape banner" width="100%"></p>
+
+# <img src=".github/assets/icon.png" width="38" align="top" alt=""> The Stationer's Report
 
 A live Amazon UK Best Sellers dashboard. Runs entirely on free tiers.
 
